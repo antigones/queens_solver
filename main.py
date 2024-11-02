@@ -1,4 +1,5 @@
 from queens_solver import QueensSolver
+from solver_utils import print_solution
 N = 10
 
 BOARD_COLORS = [
@@ -16,6 +17,9 @@ BOARD_COLORS = [
 
 
 if __name__ == '__main__':
-    solver = QueensSolver(nr_of_queens=N,areas=BOARD_COLORS)
-    solver.solve()
-
+    solver = QueensSolver(nr_of_queens=N,color_areas=BOARD_COLORS)
+    could_solve, solution = solver.solve()
+    if could_solve:
+        print_solution(board=solution,nr_of_queens=N,color_areas=BOARD_COLORS)
+    else:
+        print('Could not solve')
