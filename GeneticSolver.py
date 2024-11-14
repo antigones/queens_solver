@@ -9,9 +9,9 @@ np.random.seed(seed)
 
 class GeneticSolver:
 
-    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 50, mutate_proba: float = 0.3,
-                 gene_mutate_proba: float = 0.1, crossover_proba: float = 0.8, generations: int = 5000, area_version: bool = True,
-                 use_elitism: bool = True, hof: int = 2):
+    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 100, mutate_proba: float = 0.3,
+                 gene_mutate_proba: float = 0.1, crossover_proba: float = 0.8, generations: int = 1000, area_version: bool = True,
+                 use_elitism: bool = True, hof: int = 4):
         self.board = color_areas
         self.n_queens = nr_of_queens
         self.pop_size = pop_size
@@ -31,7 +31,7 @@ class GeneticSolver:
         # self.toolbox.register("mate", tools.cxOnePoint)
         self.toolbox.register("mate", tools.cxPartialyMatched)
         self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=self.gene_mutate_proba)
-        self.toolbox.register("select", tools.selTournament, tournsize=3)
+        self.toolbox.register("select", tools.selTournament, tournsize=5)
 
     def __find_ones(self, board):
         return [(i, j) for i in range(len(board)) for j in range(len(board)) if board[i][j] == 1]
@@ -128,6 +128,9 @@ class GeneticSolver:
         individual = creator.Individual(individual)
         return individual
 
+
+    # Due to neat does not implement elitistm, i used the custom function from this repo:
+    # https://github.com/PacktPublishing/Hands-On-Genetic-Algorithms-with-Python/blob/master/Chapter05/elitism.py
     def __eaSimpleWithElitism(self, population, toolbox, cxpb, mutpb, ngen, stats=None,
                             halloffame=None, verbose=__debug__):
         """This algorithm is similar to DEAP eaSimple() algorithm, with the modification that
