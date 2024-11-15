@@ -3,15 +3,16 @@ import random, numpy as np, time
 
 seed = int(str(time.time()).replace(".", "")[8:])
 # seed = 387415645
-# 310095663
 random.seed(seed)
 np.random.seed(seed)
+# Seed for normal version
+# 81305279
 
 class GeneticSolver:
 
-    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 100, mutate_proba: float = 0.3,
-                 gene_mutate_proba: float = 0.1, crossover_proba: float = 0.8, generations: int = 1000, area_version: bool = True,
-                 use_elitism: bool = True, hof: int = 4):
+    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 300, mutate_proba: float = 0.1,
+                 gene_mutate_proba: float = 0.05, crossover_proba: float = 0.9, generations: int = 300, area_version: bool = False,
+                 use_elitism: bool = False, hof: int = 2):
         self.board = color_areas
         self.n_queens = nr_of_queens
         self.pop_size = pop_size
@@ -22,8 +23,8 @@ class GeneticSolver:
         self.use_elitism = use_elitism
         self.area_version = area_version
         self.hof = hof
-        creator.create("FitnessMin", base.Fitness, weights=(1.0,))
-        creator.create("Individual", list, fitness=creator.FitnessMin)
+        creator.create("FitnessMax", base.Fitness, weights=(1.0,))
+        creator.create("Individual", list, fitness=creator.FitnessMax)
         self.toolbox = base.Toolbox()
         self.toolbox.register("populationCreator", tools.initRepeat, list, self.__create_individual)
         self.toolbox.register("evaluate", self.__eval)
@@ -31,7 +32,7 @@ class GeneticSolver:
         # self.toolbox.register("mate", tools.cxOnePoint)
         self.toolbox.register("mate", tools.cxPartialyMatched)
         self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=self.gene_mutate_proba)
-        self.toolbox.register("select", tools.selTournament, tournsize=5)
+        self.toolbox.register("select", tools.selTournament, tournsize=10)
 
     def __find_ones(self, board):
         return [(i, j) for i in range(len(board)) for j in range(len(board)) if board[i][j] == 1]
@@ -104,7 +105,7 @@ class GeneticSolver:
                 for pos in ones_pos:
                     color = self.board[pos[0]][pos[1]]
                     if color in assigned_area:
-                        same_area += 2
+                        same_area += 1
                     else:
                         assigned_area.append(color)
                 same_area -= 1
@@ -132,7 +133,7 @@ class GeneticSolver:
     # Due to neat does not implement elitistm, i used the custom function from this repo:
     # https://github.com/PacktPublishing/Hands-On-Genetic-Algorithms-with-Python/blob/master/Chapter05/elitism.py
     def __eaSimpleWithElitism(self, population, toolbox, cxpb, mutpb, ngen, stats=None,
-                            halloffame=None, verbose=__debug__):
+                              halloffame=None, verbose=__debug__):
         """This algorithm is similar to DEAP eaSimple() algorithm, with the modification that
         halloffame is used to implement an elitism mechanism. The individuals contained in the
         halloffame are directly injected into the next generation and are not subject to the
