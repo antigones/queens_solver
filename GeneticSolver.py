@@ -2,17 +2,26 @@ from deap import base, creator, tools, algorithms
 import random, numpy as np, time
 
 seed = int(str(time.time()).replace(".", "")[8:])
-# seed = 387415645
+seed = 371110659
 random.seed(seed)
 np.random.seed(seed)
+'''
 # Seed for normal version
-# 81305279
+# 388103716
+color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 300, mutate_proba: float = 0.1,
+                 gene_mutate_proba: float = 0.3, crossover_proba: float = 0.9, generations: int = 2000, area_version: bool = True,
+                 use_elitism: bool = False, hof: int = 3
+self.toolbox.register("mate", tools.cxUniformPartialyMatched, indpb=2/self.n_queens)
+self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=1/self.n_queens)
+self.toolbox.register("select", tools.selTournament, tournsize=3)
+'''
+
 
 class GeneticSolver:
 
-    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 300, mutate_proba: float = 0.1,
-                 gene_mutate_proba: float = 0.05, crossover_proba: float = 0.9, generations: int = 300, area_version: bool = False,
-                 use_elitism: bool = False, hof: int = 2):
+    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 50, mutate_proba: float = 0.8,
+                 gene_mutate_proba: float = 0.3, crossover_proba: float = 0.99, generations: int = 1000, area_version: bool = True,
+                 use_elitism: bool = True, hof: int = 5):
         self.board = color_areas
         self.n_queens = nr_of_queens
         self.pop_size = pop_size
@@ -30,9 +39,12 @@ class GeneticSolver:
         self.toolbox.register("evaluate", self.__eval)
         # self.toolbox.register("mate", tools.cxOrdered)
         # self.toolbox.register("mate", tools.cxOnePoint)
-        self.toolbox.register("mate", tools.cxPartialyMatched)
-        self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=self.gene_mutate_proba)
-        self.toolbox.register("select", tools.selTournament, tournsize=10)
+        # self.toolbox.register("mate", tools.cxUniformPartialyMatched, indpb=2/self.n_queens)
+        self.toolbox.register("mate", self.__cxTwoPointCustom)
+        # self.toolbox.register("mutate", self.__transponseMutation, indpb=self.gene_mutate_proba)
+        self.toolbox.register("mutate", self.__flipBitCustom, indpb=1/self.n_queens)
+        # self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=1/self.n_queens)
+        self.toolbox.register("select", tools.selTournament, tournsize=3)
 
     def __find_ones(self, board):
         return [(i, j) for i in range(len(board)) for j in range(len(board)) if board[i][j] == 1]
@@ -66,6 +78,67 @@ class GeneticSolver:
             if len(anti_diag) > 1:
                 anti_diags.append(anti_diag)
         return diags, anti_diags, one_pos
+
+    def __cxTwoPointCustom(self, ind1, ind2):
+        size = min(len(ind1), len(ind2))
+        i1 = self.__convert_to_matrix(individual=ind1)
+        i2 = self.__convert_to_matrix(individual=ind2)
+        cxpoint1, cxpoint2 = None, None
+        while cxpoint1 == cxpoint2:
+            cxpoint1 = random.randint(0, size - 1)
+            cxpoint2 = random.randint(0, size - 1)
+        i1 = i1[:cxpoint1] + i2[cxpoint1:cxpoint2] + i1[cxpoint2:]
+        i2 = i2[:cxpoint1] + i1[cxpoint1:cxpoint2] + i2[cxpoint2:]
+        i1 = self.__convert_to_list(individual=i1)
+        i2 = self.__convert_to_list(individual=i2)
+        ind1[:] = i1
+        ind2[:] = i2
+        return ind1, ind2
+
+    def __cxOnePointCustom(self, ind1, ind2):
+        size = min(len(ind1), len(ind2))
+        i1 = self.__convert_to_matrix(individual=ind1)
+        i2 = self.__convert_to_matrix(individual=ind2)
+        cxpoint = random.randint(0, size - 1)
+        i1 = i1[:cxpoint] + i2[cxpoint:]
+        i2 = i2[:cxpoint] + i1[cxpoint:]
+        i1 = self.__convert_to_list(individual=i1)
+        i2 = self.__convert_to_list(individual=i2)
+        ind1[:] = i1
+        ind2[:] = i2
+        return ind1, ind2
+
+    def __flipRowCustom(self, individual, indpb):
+        ind = self.__convert_to_matrix(individual=individual)
+        for i in range(len(ind)):
+            idx1, idx2 = None, None
+            while idx1 == idx2:
+                idx1 = random.randint(0, len(ind) - 1)
+                idx2 = random.randint(0, len(ind) - 1)
+            if random.random() < indpb:
+                ind[idx1], ind[idx2] = ind[idx2], ind[idx1]
+        ind = self.__convert_to_list(individual=ind)
+        individual[:] = ind
+        return individual,
+
+    def __transponseMutation(self, individual, indpb):
+        if random.random() < indpb:
+            ind = self.__convert_to_matrix(individual=individual)
+            ind = [[ind[j][i] for j in range(len(ind))] for i in range(len(ind))]
+            ind = self.__convert_to_list(individual=ind)
+            individual[:] = ind
+        return individual,
+
+    def __flipBitCustom(self, individual, indpb):
+        ind = self.__convert_to_matrix(individual=individual)
+        for row in ind:
+            if random.random() < indpb:
+                rnd_idx = random.randint(0, len(row) - 1)
+                for i in range(len(row)):
+                    row[i] = 1 if i == rnd_idx else 0
+        ind = self.__convert_to_list(individual=ind)
+        individual[:] = ind
+        return individual,
 
 
     def __eval(self, individual):
