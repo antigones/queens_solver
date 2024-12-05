@@ -1,15 +1,15 @@
 from deap import base, creator, tools, algorithms
 import random, numpy as np, time
 
+seed = int(str(time.time()).replace(".", "")[8:])
+#seed = 42
+random.seed(seed)
+np.random.seed(seed)
+
 class GeneticSolver:
 
     def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 500, mutate_proba: float = 0.4,
                  crossover_proba: float = 0.9, generations: int = 100, area_version: bool = True, use_elitism: bool = True, hof: int = 1):
-
-        self.seed = int(str(time.time()).replace(".", "")[8:])
-        # self.seed = 42
-        random.seed(self.seed)
-        np.random.seed(self.seed)
 
         self.board = color_areas
         self.n_queens = nr_of_queens
@@ -143,9 +143,9 @@ class GeneticSolver:
         could_solve = False
         if fitness == 0:
             could_solve = True
-        print("Seed = ", self.seed)
-        print("Best individual ", best)
+        print("Seed = ", seed)
         print("Best fitness ", fitness)
+        print("Best individual ", best)
         best = self.__convert_to_matrix(individual=list(best))
         print("-- Board --")
         for row in best:

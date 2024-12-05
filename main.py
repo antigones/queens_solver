@@ -19,7 +19,7 @@ BOARD_COLORS = [
 
 if __name__ == '__main__':
     # solver = QueensSolver(nr_of_queens=N,color_areas=BOARD_COLORS)
-    solver = GeneticSolver(nr_of_queens=N, color_areas=BOARD_COLORS)
+    solver = GeneticSolver(nr_of_queens=N, color_areas=BOARD_COLORS, area_version=False)
     could_solve, solution = solver.solve()
     could_solve = True
     if could_solve:
