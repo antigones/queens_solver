@@ -1,15 +1,16 @@
 from deap import base, creator, tools, algorithms
 import random, numpy as np, time
 
-seed = int(str(time.time()).replace(".", "")[8:])
-# seed = 42
-random.seed(seed)
-np.random.seed(seed)
-
 class GeneticSolver:
 
     def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 500, mutate_proba: float = 0.4,
                  crossover_proba: float = 0.9, generations: int = 100, area_version: bool = True, use_elitism: bool = True, hof: int = 1):
+
+        self.seed = int(str(time.time()).replace(".", "")[8:])
+        # self.seed = 42
+        random.seed(self.seed)
+        np.random.seed(self.seed)
+
         self.board = color_areas
         self.n_queens = nr_of_queens
         self.pop_size = pop_size
@@ -22,8 +23,8 @@ class GeneticSolver:
         creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.FitnessMin)
         self.toolbox = base.Toolbox()
-        self.toolbox.register("randomOrder", random.sample, range(self.n_queens), self.n_queens)
-        self.toolbox.register("individualCreator", tools.initIterate, creator.Individual, self.toolbox.randomOrder)
+        self.toolbox.register("randomQueens", random.sample, range(self.n_queens), self.n_queens)
+        self.toolbox.register("individualCreator", tools.initIterate, creator.Individual, self.toolbox.randomQueens)
         self.toolbox.register("populationCreator", tools.initRepeat, list, self.toolbox.individualCreator)
         self.toolbox.register("evaluate", self.__eval)
         self.toolbox.register("select", tools.selTournament, tournsize=2)
@@ -142,7 +143,7 @@ class GeneticSolver:
         could_solve = False
         if fitness == 0:
             could_solve = True
-        print("Seed = ", seed)
+        print("Seed = ", self.seed)
         print("Best individual ", best)
         print("Best fitness ", fitness)
         best = self.__convert_to_matrix(individual=list(best))
