@@ -7,19 +7,24 @@ class QueensSolver:
         self.nr_of_queens = nr_of_queens
         self.color_areas = color_areas
         self.moves = []
+
+    def build_board(self, placed_queens_positions):
+        board = [[0 for _ in range(self.nr_of_queens)] for _ in range(self.nr_of_queens)]
+        for positions in placed_queens_positions.values():
+            for row,col in positions:
+                board[row][col] = 1
+        return board
     
     def solve(self):
         placed_queens_positions = defaultdict(list)
         if self.place_queen(col=0,placed_queens_positions=placed_queens_positions) == False:
             return (False,[],[])
-        board = [[0 for _ in range(self.nr_of_queens)] for _ in range(self.nr_of_queens)]
-        for positions in placed_queens_positions.values():
-            for row,col in positions:
-                board[row][col] = 1
+        
+        board = self.build_board(placed_queens_positions=placed_queens_positions)
         return (True,board,self.moves)
     
     def place_queen(self, col, placed_queens_positions):
-        # self.moves.append(deepcopy(self.board))
+        self.moves.append(placed_queens_positions)
         if self.two_queens_on_same_color(placed_queens_positions=placed_queens_positions):
             return False   
         if col >= self.nr_of_queens:
