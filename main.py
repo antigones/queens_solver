@@ -18,7 +18,7 @@ BOARD_COLORS = [
 
 if __name__ == '__main__':
     solver = QueensSolver(nr_of_queens=N,color_areas=BOARD_COLORS)
-    could_solve, solution = solver.solve()
+    could_solve, solution, _ = solver.solve()
     if could_solve:
         print_solution(board=solution,nr_of_queens=N,color_areas=BOARD_COLORS)
     else:
