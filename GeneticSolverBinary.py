@@ -2,19 +2,9 @@ from deap import base, creator, tools, algorithms
 import random, numpy as np, time
 
 seed = int(str(time.time()).replace(".", "")[8:])
-seed = 371110659
+seed = 96085098
 random.seed(seed)
 np.random.seed(seed)
-'''
-# Seed for normal version
-# 388103716
-color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 300, mutate_proba: float = 0.1,
-                 gene_mutate_proba: float = 0.3, crossover_proba: float = 0.9, generations: int = 2000, area_version: bool = True,
-                 use_elitism: bool = False, hof: int = 3
-self.toolbox.register("mate", tools.cxUniformPartialyMatched, indpb=2/self.n_queens)
-self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=1/self.n_queens)
-self.toolbox.register("select", tools.selTournament, tournsize=3)
-'''
 
 
 class GeneticSolver:
@@ -37,13 +27,8 @@ class GeneticSolver:
         self.toolbox = base.Toolbox()
         self.toolbox.register("populationCreator", tools.initRepeat, list, self.__create_individual)
         self.toolbox.register("evaluate", self.__eval)
-        # self.toolbox.register("mate", tools.cxOrdered)
-        # self.toolbox.register("mate", tools.cxOnePoint)
-        # self.toolbox.register("mate", tools.cxUniformPartialyMatched, indpb=2/self.n_queens)
         self.toolbox.register("mate", self.__cxTwoPointCustom)
-        # self.toolbox.register("mutate", self.__transponseMutation, indpb=self.gene_mutate_proba)
         self.toolbox.register("mutate", self.__flipBitCustom, indpb=1/self.n_queens)
-        # self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=1/self.n_queens)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
 
 
