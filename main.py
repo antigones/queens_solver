@@ -1,6 +1,7 @@
 from queens_solver import QueensSolver
 from solver_utils import print_solution
-from GeneticSolver import GeneticSolver
+from GeneticSolverBinary import GeneticSolver
+# from GeneticSolverInteger import GeneticSolver
 N = 10
 
 BOARD_COLORS = [
