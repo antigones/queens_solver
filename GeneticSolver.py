@@ -3,13 +3,15 @@ import random, numpy as np, time
 
 seed = int(str(time.time()).replace(".", "")[8:])
 #seed = 42
+# seed = 65792875 # --> versione con area. Disposizione vincolata
 random.seed(seed)
 np.random.seed(seed)
 
 class GeneticSolver:
 
-    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 500, mutate_proba: float = 0.4,
-                 crossover_proba: float = 0.9, generations: int = 100, area_version: bool = True, use_elitism: bool = True, hof: int = 1):
+    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 500, mutate_proba: float = 0.1,
+                 crossover_proba: float = 0.9, generations: int = 200, area_version: bool = True, use_elitism: bool = True,
+                 hof: int = 20, force_position: bool = True):
 
         self.board = color_areas
         self.n_queens = nr_of_queens
@@ -23,13 +25,33 @@ class GeneticSolver:
         creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.FitnessMin)
         self.toolbox = base.Toolbox()
-        self.toolbox.register("randomQueens", random.sample, range(self.n_queens), self.n_queens)
-        self.toolbox.register("individualCreator", tools.initIterate, creator.Individual, self.toolbox.randomQueens)
+        if force_position:
+            self.toolbox.register("individualCreator", tools.initIterate, creator.Individual, self.create_individual)
+        else:
+            self.toolbox.register("randomQueens", random.sample, range(self.n_queens), self.n_queens)
+            self.toolbox.register("individualCreator", tools.initIterate, creator.Individual, self.toolbox.randomQueens)
         self.toolbox.register("populationCreator", tools.initRepeat, list, self.toolbox.individualCreator)
         self.toolbox.register("evaluate", self.__eval)
-        self.toolbox.register("select", tools.selTournament, tournsize=2)
+        self.toolbox.register("select", tools.selTournament, tournsize=5)
         self.toolbox.register("mate", tools.cxUniformPartialyMatched, indpb=2.0 / self.n_queens)
         self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=1.0 / self.n_queens)
+
+    def create_individual(self):
+        individual = []
+        areas_occupied = set()
+        for row in range(self.n_queens):
+            valid_cols = []
+            for col in range(self.n_queens):
+                area = self.board[row][col]
+                if area not in areas_occupied:
+                    valid_cols.append(col)
+            if valid_cols:
+                chosen_col = random.choice(valid_cols)
+                individual.append(chosen_col)
+                areas_occupied.add(self.board[row][chosen_col])
+            else:
+                individual.append(random.randint(0, self.n_queens - 1))
+        return individual
 
     def __eval(self, individual):
         fitness = 0
@@ -47,7 +69,7 @@ class GeneticSolver:
             for row, col in enumerate(individual):
                 board_color = self.board[row][col]
                 if board_color in areas:
-                    fitness += 1
+                    fitness += 2
                 else:
                     areas.append(board_color)
         return fitness,
