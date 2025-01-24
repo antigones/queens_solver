@@ -2,6 +2,7 @@ from queens_solver import QueensSolver
 from solver_utils import print_solution
 from GeneticSolverBinary import GeneticSolver
 # from GeneticSolverInteger import GeneticSolver
+from CPlexSolver import CPlexSolver
 N = 10
 
 BOARD_COLORS = [
@@ -19,11 +20,14 @@ BOARD_COLORS = [
 
 
 if __name__ == '__main__':
+    solver = CPlexSolver(color_areas=BOARD_COLORS, nr_of_queens=4)
+    solver.solve()
+
     # solver = QueensSolver(nr_of_queens=N,color_areas=BOARD_COLORS)
-    solver = GeneticSolver(nr_of_queens=N, color_areas=BOARD_COLORS)
-    could_solve, solution = solver.solve()
-    could_solve = True
-    if could_solve:
-        print_solution(board=solution, nr_of_queens=N, color_areas=BOARD_COLORS)
-    else:
-        print('Could not solve')
+    # solver = GeneticSolver(nr_of_queens=N, color_areas=BOARD_COLORS)
+    # could_solve, solution = solver.solve()
+    # could_solve = True
+    # if could_solve:
+    #     print_solution(board=solution, nr_of_queens=N, color_areas=BOARD_COLORS)
+    # else:
+    #     print('Could not solve')
