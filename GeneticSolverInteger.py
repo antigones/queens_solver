@@ -169,7 +169,8 @@ class GeneticSolver:
         print("Best fitness ", fitness)
         print("Best individual ", best)
         best = self.__convert_to_matrix(individual=list(best))
-        print("-- Board --")
-        for row in best:
-            print(row)
-        return could_solve, best
+        print("solution: ")
+        for elem in best:
+            print(elem)
+        print("----------")
+        return could_solve, best, None
