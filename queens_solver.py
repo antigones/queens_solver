@@ -17,6 +17,7 @@ class QueensSolver:
     
     def solve(self):
         placed_queens_positions = defaultdict(list)
+       
         if self.place_queen(col=0,placed_queens_positions=placed_queens_positions) == False:
             return (False,[],[])
         
@@ -25,9 +26,8 @@ class QueensSolver:
     
     def place_queen(self, col, placed_queens_positions):
         self.moves.append(placed_queens_positions)
-        if self.two_queens_on_same_color(placed_queens_positions=placed_queens_positions):
-            return False   
-        if col >= self.nr_of_queens:
+         
+        if col >= self.nr_of_queens and all(len(lst) > 0 for lst in placed_queens_positions.values()):
             return True
         
         for i in range(self.nr_of_queens):
@@ -40,6 +40,8 @@ class QueensSolver:
         return False
 
     def is_safe(self, row, col, placed_queens_positions):
+        if self.two_queens_on_same_color(placed_queens_positions=placed_queens_positions):
+            return False  
         for i in range(col):
             if any((row,i) in positions for positions in placed_queens_positions.values()):
                 return False
