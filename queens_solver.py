@@ -27,7 +27,8 @@ class QueensSolver:
     def place_queen(self, col, placed_queens_positions):
         self.moves.append(placed_queens_positions)
          
-        if col >= self.nr_of_queens and all(len(lst) > 0 for lst in placed_queens_positions.values()):
+        if col >= self.nr_of_queens and all(len(lst) == 1 for lst in placed_queens_positions.values()):
+            print('placed_queens_positions',placed_queens_positions)
             return True
         
         for i in range(self.nr_of_queens):
