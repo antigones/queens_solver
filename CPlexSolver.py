@@ -59,12 +59,16 @@ class CPlexSolver:
                     if color not in color_dict:
                         color_dict[color] = []
                     color_dict[color].append((i + 1, j + 1))
-
+            # color_dict.pop(3)
+            # color_dict.pop(6)
             for color in color_dict:
                 position_per_color = color_dict[color]
                 col_vars = [variables[f"x{elem[0]}{elem[1]}"] for elem in position_per_color]
-                c = Constraint(sum(col_vars), lb=0, ub=1)
+                c = Constraint(sum(col_vars), lb=1, ub=1)
                 constraints.append(c)
+
+                # 3: 1 <= x_2_8 + x_3_7 + x_3_8 + x_4_7 <= 1
+                # 6: 1 <= x_5_3 + x_5_4 + x_6_4 + x_7_4 + x_8_4 + x_8_5 + x_9_5 <= 1
 
         # objective function
         of_var = []
@@ -81,11 +85,12 @@ class CPlexSolver:
         return model
 
     def solve(self):
+
         model = self.__generate_model()
 
-        model.configuration.verbosity = 1
         model.configuration.presolve = False
-        model.configuration.timeout = 600
+        # model.configuration.timeout = 600
+        model.configuration.verbosity = 3
 
         try:
             model.optimize()
@@ -98,12 +103,18 @@ class CPlexSolver:
             could_solve = True
 
         solution = []
-        row_sol = []
+        row_solution = []
+        raw_sol = {}
         for var_name, var in model.variables.iteritems():
-            row_sol.append(int(var.primal))
-            if len(row_sol) % self.nr_of_queens == 0:
-                solution.append(row_sol)
-                row_sol = []
+            raw_sol[var_name] = int(var.primal)
+        sorted_keys = sorted(raw_sol.keys(), key=lambda x: (int(x.split('_')[1]), int(x.split('_')[2])))
+        raw_sol = {k: raw_sol[k] for k in sorted_keys}
+        for key in raw_sol:
+            row_solution.append(raw_sol[key])
+            if key.endswith(f'_{self.nr_of_queens}'):
+                solution.append(row_solution)
+                row_solution = []
+
         print("status:", model.status)
         print("objective value:", model.objective.value)
         print("solution: ")
