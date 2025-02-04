@@ -1,4 +1,4 @@
-from optlang.gurobi_interface import Model, Variable, Constraint, Objective
+from optlang.glpk_interface import Model, Variable, Constraint, Objective
 
 
 class CPlexSolver:
@@ -34,10 +34,6 @@ class CPlexSolver:
             c = Constraint(sum(sum_var), lb=0, ub=1)
             row_cs.append(c)
 
-        # print("Row")
-        # for r in row_cs:
-        #     print(r)
-
         constraints += row_cs
 
         # Colonne
@@ -49,35 +45,7 @@ class CPlexSolver:
             c = Constraint(sum(sum_var), lb=0, ub=1)
             col_cs.append(c)
 
-        # Color
-        # 3: 1 <= x_2_8 + x_3_7 + x_3_8 + x_4_7 <= 1
-        # 6: 1 <= x_5_3 + x_5_4 + x_6_4 + x_7_4 + x_8_4 + x_8_5 + x_9_5 <= 1
-
-        # columns
-        # 3: 1 <= x_10_4 + x_1_4 + x_2_4 + x_3_4 + x_4_4 + x_5_4 + x_6_4 + x_7_4 + x_8_4 + x_9_4 <= 1
-        # 4: 1 <= x_10_5 + x_1_5 + x_2_5 + x_3_5 + x_4_5 + x_5_5 + x_6_5 + x_7_5 + x_8_5 + x_9_5 <= 1
-        # 5: 1 <= x_10_6 + x_1_6 + x_2_6 + x_3_6 + x_4_6 + x_5_6 + x_6_6 + x_7_6 + x_8_6 + x_9_6 <= 1
-        # 6: 1 <= x_10_7 + x_1_7 + x_2_7 + x_3_7 + x_4_7 + x_5_7 + x_6_7 + x_7_7 + x_8_7 + x_9_7 <= 1
-
-        co = {k: val for k, val in enumerate(col_cs)}
-        # co.pop(0)
-        # co.pop(1)
-        # co.pop(2)
-        # co.pop(3)
-        # co.pop(4)
-        # co.pop(5)
-        # co.pop(6)
-        # co.pop(7)
-        # co.pop(8)
-        # co.pop(9)
-        col_cs = [co[k] for k in co]
-
-        # print("Col")
-        # for c in col_cs:
-        #     print(c)
-        #
-        if len(col_cs) > 0:
-            constraints += col_cs
+        constraints += col_cs
 
 
         # Diagonali
@@ -115,9 +83,6 @@ class CPlexSolver:
                 c = Constraint(sum(col_vars), lb=1, ub=1)
                 constraints.append(c)
 
-                # 3: 1 <= x_2_8 + x_3_7 + x_3_8 + x_4_7 <= 1
-                # 6: 1 <= x_5_3 + x_5_4 + x_6_4 + x_7_4 + x_8_4 + x_8_5 + x_9_5 <= 1
-
         # objective function
         of_var = []
         for i in range(1, self.nr_of_queens + 1):
@@ -139,16 +104,6 @@ class CPlexSolver:
         model.configuration.presolve = False
         # model.configuration.timeout = 600
         model.configuration.verbosity = 3
-
-        model.optimize()
-
-        if model.status == 'infeasible':
-
-            model.problem.computeIIS()
-            for constraint in model.constraints:
-                gurobi_constraint = model.problem.getConstrByName(constraint.name)
-                if gurobi_constraint.IISConstr == 1:
-                    print(f"Vincolo in IIS: {constraint}")
 
         try:
             model.optimize()
