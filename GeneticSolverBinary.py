@@ -2,33 +2,32 @@ from deap import base, creator, tools, algorithms
 import random, numpy as np, time
 
 seed = int(str(time.time()).replace(".", "")[8:])
-seed = 96085098
 random.seed(seed)
 np.random.seed(seed)
 
 
 class GeneticSolver:
 
-    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 50, mutate_proba: float = 0.8,
-                 gene_mutate_proba: float = 0.3, crossover_proba: float = 0.99, generations: int = 1000, area_version: bool = True,
-                 use_elitism: bool = True, hof: int = 5):
+    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 1000, mutate_proba: float = 0.2,
+                 crossover_proba: float = 0.9, generations: int = 200, area_version: bool = True,
+                 use_elitism: bool = True, hof: int = 5, relaxed: bool = True):
         self.board = color_areas
         self.n_queens = nr_of_queens
         self.pop_size = pop_size
-        self.gene_mutate_proba = gene_mutate_proba
-        self.mutate_proba = mutate_proba
+        self.mutate_proba = mutate_proba if mutate_proba is not None else 1 / self.n_queens
         self.generations = generations
         self.crossover_proba = crossover_proba
         self.use_elitism = use_elitism
         self.area_version = area_version
         self.hof = hof
+        self.relaxed = relaxed
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", list, fitness=creator.FitnessMax)
         self.toolbox = base.Toolbox()
         self.toolbox.register("populationCreator", tools.initRepeat, list, self.__create_individual)
         self.toolbox.register("evaluate", self.__eval)
         self.toolbox.register("mate", self.__cxTwoPointCustom)
-        self.toolbox.register("mutate", self.__flipBitCustom, indpb=1/self.n_queens)
+        self.toolbox.register("mutate", self.__randMutateCustom, indpb=self.mutate_proba)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
 
 
@@ -65,6 +64,23 @@ class GeneticSolver:
                 anti_diags.append(anti_diag)
         return diags, anti_diags, one_pos
 
+    def __find_adjacent_diagonals(self, board):
+        n = len(board)
+        one_pos = self.__find_ones(board)
+        diags, anti_diags = [], []
+
+        for pos in one_pos:
+            i, j = pos
+            if i + 1 < n and j + 1 < n and board[i + 1][j + 1] == 1:
+                diags.append([(i, j), (i + 1, j + 1)])
+            if i - 1 >= 0 and j - 1 >= 0 and board[i - 1][j - 1] == 1:
+                diags.append([(i, j), (i - 1, j - 1)])
+            if i + 1 < n and j - 1 >= 0 and board[i + 1][j - 1] == 1:
+                anti_diags.append([(i, j), (i + 1, j - 1)])
+            if i - 1 >= 0 and j + 1 < n and board[i - 1][j + 1] == 1:
+                anti_diags.append([(i, j), (i - 1, j + 1)])
+        return diags, anti_diags, one_pos
+
     def __cxTwoPointCustom(self, ind1, ind2):
         size = min(len(ind1), len(ind2))
         i1 = self.__convert_to_matrix(individual=ind1)
@@ -75,10 +91,8 @@ class GeneticSolver:
             cxpoint2 = random.randint(0, size - 1)
         i1 = i1[:cxpoint1] + i2[cxpoint1:cxpoint2] + i1[cxpoint2:]
         i2 = i2[:cxpoint1] + i1[cxpoint1:cxpoint2] + i2[cxpoint2:]
-        i1 = self.__convert_to_list(individual=i1)
-        i2 = self.__convert_to_list(individual=i2)
-        ind1[:] = i1
-        ind2[:] = i2
+        ind1[:] = self.__convert_to_list(individual=i1)
+        ind2[:] = self.__convert_to_list(individual=i2)
         return ind1, ind2
 
     def __cxOnePointCustom(self, ind1, ind2):
@@ -88,43 +102,74 @@ class GeneticSolver:
         cxpoint = random.randint(0, size - 1)
         i1 = i1[:cxpoint] + i2[cxpoint:]
         i2 = i2[:cxpoint] + i1[cxpoint:]
-        i1 = self.__convert_to_list(individual=i1)
-        i2 = self.__convert_to_list(individual=i2)
-        ind1[:] = i1
-        ind2[:] = i2
+        ind1[:] = self.__convert_to_list(individual=i1)
+        ind2[:] = self.__convert_to_list(individual=i2)
         return ind1, ind2
-
-    def __flipRowCustom(self, individual, indpb):
-        ind = self.__convert_to_matrix(individual=individual)
-        for i in range(len(ind)):
-            idx1, idx2 = None, None
-            while idx1 == idx2:
-                idx1 = random.randint(0, len(ind) - 1)
-                idx2 = random.randint(0, len(ind) - 1)
-            if random.random() < indpb:
-                ind[idx1], ind[idx2] = ind[idx2], ind[idx1]
-        ind = self.__convert_to_list(individual=ind)
-        individual[:] = ind
-        return individual,
 
     def __transponseMutation(self, individual, indpb):
         if random.random() < indpb:
             ind = self.__convert_to_matrix(individual=individual)
             ind = [[ind[j][i] for j in range(len(ind))] for i in range(len(ind))]
-            ind = self.__convert_to_list(individual=ind)
-            individual[:] = ind
+            individual[:] = self.__convert_to_list(individual=ind)
+        return individual,
+
+    def __flipRowCustom(self, individual, indpb):
+        ind = self.__convert_to_matrix(individual=individual)
+        swapped_rows = set()
+        for i in range(len(ind) // 2):
+            available_rows = list(set(range(len(ind))) - swapped_rows)
+            if len(available_rows) < 2:
+                break
+            idx1, idx2 = random.sample(available_rows, 2)
+            if random.random() <= indpb:
+                ind[idx1], ind[idx2] = ind[idx2], ind[idx1]
+                swapped_rows.add(idx1)
+                swapped_rows.add(idx2)
+        individual[:] = self.__convert_to_list(individual=ind)
+        return individual,
+
+    def __flipColumnCustom(self, individual, indpb):
+        ind = self.__convert_to_matrix(individual=individual)
+        swapped_cols = set()
+
+        for _ in range(len(ind[0]) // 2):
+            available_cols = list(set(range(len(ind[0]))) - swapped_cols)
+
+            if len(available_cols) < 2:
+                break
+
+            col1, col2 = random.sample(available_cols, 2)
+            if random.random() <= indpb:
+                for row in range(len(ind)):
+                    ind[row][col1], ind[row][col2] = ind[row][col2], ind[row][col1]
+
+                swapped_cols.add(col1)
+                swapped_cols.add(col2)
+
+        individual[:] = self.__convert_to_list(ind)
         return individual,
 
     def __flipBitCustom(self, individual, indpb):
         ind = self.__convert_to_matrix(individual=individual)
         for row in ind:
-            if random.random() < indpb:
-                rnd_idx = random.randint(0, len(row) - 1)
-                for i in range(len(row)):
-                    row[i] = 1 if i == rnd_idx else 0
-        ind = self.__convert_to_list(individual=ind)
-        individual[:] = ind
+            for i in range(len(row)):
+                if random.random() <= indpb:
+                    elem = row[i]
+                    if elem == 1:
+                        row[i] = 0
+                    else:
+                        row[i] = 1
+        individual[:] = self.__convert_to_list(individual=ind)
         return individual,
+
+    def __randMutateCustom(self, individual, indpb):
+        p = random.random()
+        if p <= 0.3:
+            return self.__flipRowCustom(individual, indpb)
+        elif 0.3 < p <= 0.6:
+            return self.__flipColumnCustom(individual, indpb)
+        else:
+            return self.__flipBitCustom(individual, indpb)
 
 
     def __eval(self, individual):
@@ -135,7 +180,10 @@ class GeneticSolver:
             assigned_area = []
             board = self.__convert_to_matrix(individual=individual)
             fitness = 1
-            diags, anti_diags, ones_pos = self.__find_diagonals(board)
+            if self.relaxed:
+                diags, anti_diags, ones_pos = self.__find_adjacent_diagonals(board)
+            else:
+                diags, anti_diags, ones_pos = self.__find_diagonals(board)
             diag_to_check = []
             if len(diags) > 0:
                 for d in diags:

@@ -3,10 +3,11 @@ from optlang.glpk_interface import Model, Variable, Constraint, Objective
 
 class CPlexSolver:
 
-    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, area_version: bool = True):
+    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, area_version: bool = True, relaxed: bool = True):
         self.board = color_areas
         self.nr_of_queens = nr_of_queens
         self.area_version = area_version
+        self.relaxed = relaxed
 
     def __order_vars(self, model):
         raw_sol = {}
@@ -31,7 +32,7 @@ class CPlexSolver:
             sum_var = []
             for j in range(1, self.nr_of_queens + 1):
                 sum_var.append(variables[f"x{i}{j}"])
-            c = Constraint(sum(sum_var), lb=0, ub=1)
+            c = Constraint(sum(sum_var), lb=1, ub=1)
             row_cs.append(c)
 
         constraints += row_cs
@@ -42,31 +43,49 @@ class CPlexSolver:
             sum_var = []
             for i in range(1, self.nr_of_queens + 1):
                 sum_var.append(variables[f"x{i}{j}"])
-            c = Constraint(sum(sum_var), lb=0, ub=1)
+            c = Constraint(sum(sum_var), lb=1, ub=1)
             col_cs.append(c)
-
         constraints += col_cs
 
-
-        # Diagonali
-        for d in range(-self.nr_of_queens + 1, self.nr_of_queens):
-            diagonal = [variables[f"x{i + 1}{j + 1}"] for i in range(self.nr_of_queens) for j in range(self.nr_of_queens) if i - j == d]
-            if diagonal:
-                if len(diagonal) == 1:
-                    c = Constraint(diagonal[0], lb=0, ub=1)
-                else:
+        if self.relaxed is False:
+            # Diagonali
+            diag = []
+            for d in range(-self.nr_of_queens + 1, self.nr_of_queens):
+                diagonal = [variables[f"x{i + 1}{j + 1}"] for i in range(self.nr_of_queens) for j in range(self.nr_of_queens) if i - j == d]
+                if diagonal:
                     c = Constraint(sum(diagonal), lb=0, ub=1)
-                constraints.append(c)
+                    diag.append(c)
+            constraints += diag
 
-        # Antidiagonali
-        for d in range(1, 2 * self.nr_of_queens):
-            diagonal = [variables[f"x{i + 1}{j + 1}"] for i in range(self.nr_of_queens) for j in range(self.nr_of_queens) if i + j + 1 == d]
-            if diagonal:
-                if len(diagonal) == 1:
-                    c = Constraint(diagonal[0], lb=0, ub=1)
-                else:
+            # Antidiagonali
+            anti_diag = []
+            for d in range(1, 2 * self.nr_of_queens):
+                diagonal = [variables[f"x{i + 1}{j + 1}"] for i in range(self.nr_of_queens) for j in range(self.nr_of_queens) if i + j + 1 == d]
+                if diagonal:
                     c = Constraint(sum(diagonal), lb=0, ub=1)
-                constraints.append(c)
+                    anti_diag.append(c)
+            constraints += anti_diag
+        else:
+            diag_relaxed = []
+            for d in range(-self.nr_of_queens + 1, self.nr_of_queens):
+                diagonal = [variables[f"x{i + 1}{j + 1}"] for i in range(self.nr_of_queens) for j in
+                            range(self.nr_of_queens) if i - j == d]
+                for k in range(len(diagonal) - 1):
+                    c = Constraint(diagonal[k] + diagonal[k + 1], lb=0, ub=1)
+                    diag_relaxed.append(c)
+                    print(c)
+
+            constraints += diag_relaxed
+
+            anti_diag_relaxed = []
+            for d in range(1, 2 * self.nr_of_queens):
+                diagonal = [variables[f"x{i + 1}{j + 1}"] for i in range(self.nr_of_queens) for j in
+                            range(self.nr_of_queens) if i + j + 1 == d]
+                for k in range(len(diagonal) - 1):
+                    c = Constraint(diagonal[k] + diagonal[k + 1], lb=0, ub=1)
+                    anti_diag_relaxed.append(c)
+
+            constraints += anti_diag_relaxed
 
         if self.area_version:
             color_dict = {}
@@ -75,8 +94,6 @@ class CPlexSolver:
                     if color not in color_dict:
                         color_dict[color] = []
                     color_dict[color].append((i + 1, j + 1))
-            color_dict.pop(3)
-            color_dict.pop(6)
             for color in color_dict:
                 position_per_color = color_dict[color]
                 col_vars = [variables[f"x{elem[0]}{elem[1]}"] for elem in position_per_color]

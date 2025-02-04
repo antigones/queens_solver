@@ -2,23 +2,23 @@ from deap import base, creator, tools, algorithms
 import random, numpy as np, time
 
 seed = int(str(time.time()).replace(".", "")[8:])
-#seed = 42
-# seed = 65792875 # --> versione con area. Disposizione vincolata
+seed = 577781055
 random.seed(seed)
 np.random.seed(seed)
 
 class GeneticSolver:
 
-    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 500, mutate_proba: float = 0.1,
-                 crossover_proba: float = 0.9, generations: int = 200, area_version: bool = True, use_elitism: bool = True,
-                 hof: int = 20, force_position: bool = True):
+    def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 600, mutate_proba: float = None,
+                 crossover_proba: float = None, generations: int = 400, area_version: bool = True, use_elitism: bool = True,
+                 hof: int = 5, force_position: bool = False, relaxed: bool = True):
 
         self.board = color_areas
         self.n_queens = nr_of_queens
         self.pop_size = pop_size
-        self.mutate_proba = mutate_proba
+        self.relaxed = relaxed
+        self.mutate_proba = mutate_proba if mutate_proba is not None else 1.0 / self.n_queens
         self.generations = generations
-        self.crossover_proba = crossover_proba
+        self.crossover_proba = crossover_proba if crossover_proba is not None else 1.0 / self.n_queens
         self.use_elitism = use_elitism
         self.area_version = area_version
         self.hof = hof
@@ -32,9 +32,9 @@ class GeneticSolver:
             self.toolbox.register("individualCreator", tools.initIterate, creator.Individual, self.toolbox.randomQueens)
         self.toolbox.register("populationCreator", tools.initRepeat, list, self.toolbox.individualCreator)
         self.toolbox.register("evaluate", self.__eval)
-        self.toolbox.register("select", tools.selTournament, tournsize=5)
-        self.toolbox.register("mate", tools.cxUniformPartialyMatched, indpb=2.0 / self.n_queens)
-        self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=1.0 / self.n_queens)
+        self.toolbox.register("select", tools.selTournament, tournsize=20)
+        self.toolbox.register("mate", tools.cxUniformPartialyMatched, indpb=self.crossover_proba)
+        self.toolbox.register("mutate", tools.mutShuffleIndexes, indpb=self.mutate_proba)
 
     def create_individual(self):
         individual = []
@@ -58,11 +58,19 @@ class GeneticSolver:
         # Controllo diagonali. Un elemento è sulla tessa diagonale se |r1 - r2| == |c1 - c2|
         # Per costruzione non serve controllare le righe e le colonne
         # (r, q) è la posizione di una regina
-        for row_q1, col_q1 in enumerate(individual):
-            for row_q2, col_q2 in enumerate(individual):
-                if row_q1 != row_q2 and col_q1 != col_q2:
-                    if abs(row_q1 - row_q2) == abs(col_q1 - col_q2):
-                        fitness += 1
+        if self.relaxed is False:
+            for row_q1, col_q1 in enumerate(individual):
+                for row_q2, col_q2 in enumerate(individual):
+                    if row_q1 != row_q2 and col_q1 != col_q2:
+                        if abs(row_q1 - row_q2) == abs(col_q1 - col_q2):
+                            fitness += 1
+        else:
+            for row_q1 in range(self.n_queens - 1):
+                col_q1 = individual[row_q1]
+                col_q2 = individual[row_q1 + 1]
+                if abs(col_q1 - col_q2) == 1:
+                    fitness += 1
+
         if self.area_version:
             areas = []
             # Controllo aree
