@@ -73,8 +73,6 @@ class CPlexSolver:
                 for k in range(len(diagonal) - 1):
                     c = Constraint(diagonal[k] + diagonal[k + 1], lb=0, ub=1)
                     diag_relaxed.append(c)
-                    print(c)
-
             constraints += diag_relaxed
 
             anti_diag_relaxed = []
@@ -111,6 +109,13 @@ class CPlexSolver:
         model = Model(name=f'{self.nr_of_queens} Queens Model')
         model.objective = obj
         model.add(constraints)
+
+        # print("Funzione Obiettivo:")
+        # print(obj)
+        #
+        # print("Vincoli")
+        # for c in constraints:
+        #     print(c)
 
         return model
 

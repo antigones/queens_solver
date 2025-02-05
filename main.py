@@ -71,9 +71,9 @@ BOARD_COLORS = BOARD_COLORS_3
 N = len(BOARD_COLORS)
 
 if __name__ == '__main__':
-    # solver = CPlexSolver(color_areas=BOARD_COLORS, nr_of_queens=N)
+    solver = CPlexSolver(color_areas=BOARD_COLORS, nr_of_queens=N)
     # solver = QueensSolver(nr_of_queens=N,color_areas=BOARD_COLORS)
-    solver = GeneticSolver(nr_of_queens=N, color_areas=BOARD_COLORS)
+    # solver = GeneticSolver(nr_of_queens=N, color_areas=BOARD_COLORS)
     could_solve, solution, _ = solver.solve()
     print_solution(board=solution, nr_of_queens=N, color_areas=BOARD_COLORS)
     if not could_solve:
