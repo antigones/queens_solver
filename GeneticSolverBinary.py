@@ -9,7 +9,7 @@ np.random.seed(seed)
 class GeneticSolver:
 
     def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 1000, mutate_proba: float = 0.2,
-                 crossover_proba: float = 0.9, generations: int = 200, area_version: bool = True,
+                 crossover_proba: float = 0.9, generations: int = 50, area_version: bool = True,
                  use_elitism: bool = True, hof: int = 5, relaxed: bool = True):
         self.board = color_areas
         self.n_queens = nr_of_queens
