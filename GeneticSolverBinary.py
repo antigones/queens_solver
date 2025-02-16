@@ -89,8 +89,10 @@ class GeneticSolver:
         while cxpoint1 == cxpoint2:
             cxpoint1 = random.randint(0, size - 1)
             cxpoint2 = random.randint(0, size - 1)
-        i1 = i1[:cxpoint1] + i2[cxpoint1:cxpoint2] + i1[cxpoint2:]
-        i2 = i2[:cxpoint1] + i1[cxpoint1:cxpoint2] + i2[cxpoint2:]
+        segment1 = i1[cxpoint1:cxpoint2]
+        segment2 = i2[cxpoint1:cxpoint2]
+        i1 = i1[:cxpoint1] + segment2 + i1[cxpoint2:]
+        i2 = i2[:cxpoint1] + segment1 + i2[cxpoint2:]
         ind1[:] = self.__convert_to_list(individual=i1)
         ind2[:] = self.__convert_to_list(individual=i2)
         return ind1, ind2
@@ -100,8 +102,10 @@ class GeneticSolver:
         i1 = self.__convert_to_matrix(individual=ind1)
         i2 = self.__convert_to_matrix(individual=ind2)
         cxpoint = random.randint(0, size - 1)
-        i1 = i1[:cxpoint] + i2[cxpoint:]
-        i2 = i2[:cxpoint] + i1[cxpoint:]
+        slice1 = i1[cxpoint:]
+        slice2 = i2[cxpoint:]
+        i1 = i1[:cxpoint] + slice2
+        i2 = i2[:cxpoint] + slice1
         ind1[:] = self.__convert_to_list(individual=i1)
         ind2[:] = self.__convert_to_list(individual=i2)
         return ind1, ind2
