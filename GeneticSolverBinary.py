@@ -1,16 +1,20 @@
 from deap import base, creator, tools, algorithms
 import random, numpy as np, time
 
-seed = int(str(time.time()).replace(".", "")[8:])
-random.seed(seed)
-np.random.seed(seed)
-
-
 class GeneticSolver:
 
     def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 1000, mutate_proba: float = 0.2,
                  crossover_proba: float = 0.9, generations: int = 50, area_version: bool = True,
-                 use_elitism: bool = True, hof: int = 5, relaxed: bool = True):
+                 use_elitism: bool = True, hof: int = 5, relaxed: bool = True, seed=None, mate="onepoint"):
+
+        if seed is None:
+            self.seed = int(str(time.time()).replace(".", "")[8:])
+        else:
+            self.seed = int(seed)
+
+        random.seed(seed)
+        np.random.seed(seed)
+
         self.board = color_areas
         self.n_queens = nr_of_queens
         self.pop_size = pop_size
@@ -26,7 +30,10 @@ class GeneticSolver:
         self.toolbox = base.Toolbox()
         self.toolbox.register("populationCreator", tools.initRepeat, list, self.__create_individual)
         self.toolbox.register("evaluate", self.__eval)
-        self.toolbox.register("mate", self.__cxTwoPointCustom)
+        if mate == "onepoint":
+            self.toolbox.register("mate", self.__cxOnePointCustom)
+        else:
+            self.toolbox.register("mate", self.__cxTwoPointCustom)
         self.toolbox.register("mutate", self.__randMutateCustom, indpb=self.mutate_proba)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
 
@@ -323,7 +330,7 @@ class GeneticSolver:
         could_solve = False
         if fitness == 0:
             could_solve = True
-        print("Seed = ", seed)
+        print("Seed = ", self.seed)
         print("Best individual ever ", best)
         print("Best fitness ever ", fitness)
         best = self.__convert_to_matrix(individual=best)

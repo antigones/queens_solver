@@ -1,16 +1,19 @@
 from deap import base, creator, tools, algorithms
 import random, numpy as np, time
 
-seed = int(str(time.time()).replace(".", "")[8:])
-seed = 577781055
-random.seed(seed)
-np.random.seed(seed)
-
 class GeneticSolver:
 
     def __init__(self, color_areas: list[list[int]], nr_of_queens: int, pop_size: int = 600, mutate_proba: float = None,
                  crossover_proba: float = None, generations: int = 400, area_version: bool = True, use_elitism: bool = True,
-                 hof: int = 5, force_position: bool = False, relaxed: bool = True):
+                 hof: int = 5, force_position: bool = False, relaxed: bool = True, seed = None):
+
+        if seed is None:
+            self.seed = int(str(time.time()).replace(".", "")[8:])
+        else:
+            self.seed = int(seed)
+
+        random.seed(seed)
+        np.random.seed(seed)
 
         self.board = color_areas
         self.n_queens = nr_of_queens
@@ -173,7 +176,7 @@ class GeneticSolver:
         could_solve = False
         if fitness == 0:
             could_solve = True
-        print("Seed = ", seed)
+        print("Seed = ", self.seed)
         print("Best fitness ", fitness)
         print("Best individual ", best)
         best = self.__convert_to_matrix(individual=list(best))
